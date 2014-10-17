@@ -51,8 +51,17 @@ void swizzle( Class class, SEL func, Class newclass, SEL newfunc )
         return;
     }
     
+    Class Stream = NSClassFromString( @"TwitterConcreteStatusesStream" );
+    
+    if ( !Stream )
+    {
+        NSLog( @"missing stream class! bailing!\n" );
+        return;
+    }
+    
     // swizzle( Tweet, @selector( displayText ), [self class], @selector( override_displayText ) );
     swizzle( Tweet, @selector( isNotADummyStatus ), [self class], @selector( override_isNotADummyStatus ) );
+    swizzle( Stream, @selector( addStatuses: ), [self class], @selector( override_addStatuses: ) );
     
     // this "dummy status" thing is actually quite fitting.
 }
@@ -77,13 +86,13 @@ bool hasSubstring_Case( NSString *haystack, NSString *needle )
     return [haystack rangeOfString:needle].location != NSNotFound;
 }
 
-- ( BOOL ) override_isNotADummyStatus
+bool isGamerGate( id tweet, float *certainty )
 {
     int bullshitThreshold = 50;
     int score = 0;
     
-    NSString *text = [self text];
-
+    NSString *text = [tweet text];
+    
     if ( hasSubstring( text, @"mergate" ) || hasSubstring( text, @"yourshield" ) || hasSubstring( text, @"SJW" ) )
         score = bullshitThreshold;
     
@@ -98,15 +107,47 @@ bool hasSubstring_Case( NSString *haystack, NSString *needle )
     if ( hasSubstring( text, @"corrupt" ) && hasSubstring( text, @"journalism" ) )
         score += 20;
     
-    float certainty = ( float ) score / ( float ) bullshitThreshold;
-    bool isGamerGate = certainty > 0.8f;
+    *certainty = ( float ) score / ( float ) bullshitThreshold;
+    bool isGamerGate = *certainty > 0.8f;
+
+    return isGamerGate;
+}
+
+- ( void ) override_addStatuses:( NSArray * ) statuses
+{
+    // statuses is an array of tweets
+    // don't add gamergate tweets at all, so it doesn't show an unread counter
+    NSMutableArray *array = [NSMutableArray arrayWithArray:statuses];
     
-    if ( isGamerGate )
+    if ( [statuses count] > 0 )
     {
-        NSLog(@"found gamergate tweet (certainty: %i%%); hiding!", (int) ( certainty * 100 ) );
+        for ( id status in [array reverseObjectEnumerator] )
+        {
+            float certainty = 0.0f;
+            
+            if ( isGamerGate( status, &certainty ) )
+            {
+                NSLog(@"found gamergate tweet (certainty: %i%%); discarding!", (int) ( certainty * 100 ) );
+                [array removeObject:status];
+            }
+        }
     }
     
-    return !isGamerGate;
+    [self override_addStatuses:[NSArray arrayWithArray:array]]; // array array array
+}
+
+- ( BOOL ) override_isNotADummyStatus
+{
+    float certainty = 0.0f;
+
+    if ( isGamerGate( self, &certainty ) )
+    {
+        NSLog(@"found gamergate tweet (certainty: %i%%); hiding!", (int) ( certainty * 100 ) );
+        
+        return NO;
+    }
+    
+    return YES;
 }
 
 

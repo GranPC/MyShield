@@ -76,14 +76,23 @@ void swizzle( Class class, SEL func, Class newclass, SEL newfunc )
     return oldText;
 }
 
-bool hasSubstring( NSString *haystack, NSString *needle )
+bool hasSubstring( NSString *haystack, NSString *needle, bool sensitive )
 {
-    return [haystack rangeOfString:needle options:NSCaseInsensitiveSearch].location != NSNotFound;
-}
-
-bool hasSubstring_Case( NSString *haystack, NSString *needle )
-{
-    return [haystack rangeOfString:needle].location != NSNotFound;
+    const char *pHaystack;
+    const char *pNeedle;
+    
+    if ( sensitive )
+    {
+        pHaystack = [haystack UTF8String];
+        pNeedle = [needle UTF8String];
+    }
+    else
+    {
+        pHaystack = [[haystack lowercaseString] UTF8String];
+        pNeedle = [[needle lowercaseString] UTF8String];
+    }
+    
+    return strstr( pHaystack, pNeedle ) != NULL;
 }
 
 bool isGamerGate( id tweet, float *certainty )
@@ -93,23 +102,23 @@ bool isGamerGate( id tweet, float *certainty )
     
     NSString *text = [tweet text];
     
-    if ( hasSubstring( text, @"mergate" ) || hasSubstring( text, @"yourshield" ) || hasSubstring( text, @"SJW" ) )
+    if ( hasSubstring( text, @"mergate", false ) || hasSubstring( text, @"yourshield", false ) || hasSubstring( text, @"SJW", false ) )
         score = bullshitThreshold;
     
     // TODO: maybe a settings menu would be cool
     
-    if ( hasSubstring( text, @"ethics" ) )
+    if ( hasSubstring( text, @"ethics", false ) )
         score += 10;
     
-    if ( hasSubstring_Case( text, @"LW" ) )
+    if ( hasSubstring( text, @"LW", true ) )
         score += 10;
     
-    if ( hasSubstring( text, @"corrupt" ) && hasSubstring( text, @"journalism" ) )
+    if ( hasSubstring( text, @"corrupt", false ) && hasSubstring( text, @"journalism", false ) )
         score += 20;
     
     *certainty = ( float ) score / ( float ) bullshitThreshold;
     bool isGamerGate = *certainty > 0.8f;
-
+    
     return isGamerGate;
 }
 
@@ -139,7 +148,7 @@ bool isGamerGate( id tweet, float *certainty )
 - ( BOOL ) override_isNotADummyStatus
 {
     float certainty = 0.0f;
-
+    
     if ( isGamerGate( self, &certainty ) )
     {
         NSLog(@"found gamergate tweet (certainty: %i%%); hiding!", (int) ( certainty * 100 ) );

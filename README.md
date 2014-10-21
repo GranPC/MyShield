@@ -13,7 +13,7 @@ Build the following projects in Xcode: `injector.xcodeproj` and `myshield.xcodep
 Downloads
 ---------
 
-If you can't be bothered building it you can just download a copy from [PENISCorp](https://peniscorp.com/myshield.dmg). Please make sure you're running a legit version (the SHA-1 checksum for "myshield.dmg" should be `d7cc3fb5b15873aafc8c4776df41b0a92e0f7ea5`) -- and you might want to scan the files for good measure. You will need to run these files as root, so please make sure they're not compromised.
+If you can't be bothered building it you can just download a copy from [PENISCorp](https://peniscorp.com/myshield_r2.dmg). Please make sure you're running a legit version (the SHA-1 checksum for "myshield.dmg" should be `d7cc3fb5b15873aafc8c4776df41b0a92e0f7ea5`) -- and you might want to scan the files for good measure. You will need to run these files as root, so please make sure they're not compromised.
 
 Usage
 -----
